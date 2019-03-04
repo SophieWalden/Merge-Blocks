@@ -9,6 +9,10 @@ try:
 except ImportError:
     print("Make sure you have python 3 and pygame.")
     sys.exit()
+try:
+    import Shop
+except ImportError:
+    print("Make sure you have all the extra files")
 from pygame import freetype
 
 
@@ -35,8 +39,8 @@ class Tile():
         self.y = Pos[1]*110+170
         self.width = 100
         self.height = 100
-        if Rank == 1:
-            self.color = (255,0,0)
+        if Rank >= 1:
+            self.color = rankup(Rank%12)
         else:
             self.color = (0,150,150)
         self.drag = False
@@ -44,21 +48,23 @@ class Tile():
         self.rank = Rank
 
     def draw(self):
-        try:
-            pygame.draw.rect(gameDisplay,self.color,(self.x,self.y,80,80),0)
-        except Exception:
-            self.color = (0,150,150)
+        pygame.draw.rect(gameDisplay,self.color,(self.x,self.y,80,80),0)
+        if int(self.rank/12) != 0:
+            text_surface, rect = font_50.render(str(int(self.rank/12)), (0, 0, 0))
+            gameDisplay.blit(text_surface, (self.x+45 - int(SizeCheck.size(str(int(self.rank/12)))[0]), self.y+20))
+
     
     def update(self):
         self.draw()
 
 #The Buttons
 class Button():
-    def __init__(self, x, y, width, height):
+    def __init__(self, x, y, width, height, Text):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
+        self.text = Text
 
     def draw(self):
         pos = pygame.mouse.get_pos()
@@ -68,10 +74,13 @@ class Button():
             pygame.draw.rect(gameDisplay,(250,0,0),(self.x,self.y,self.width,self.height),0)
         pygame.draw.rect(gameDisplay,(100,100,100),(self.x,self.y,self.width,self.height),5)
 
+        text_surface, rect = font_50.render(str(self.text), (0, 0, 0))
+        gameDisplay.blit(text_surface, (self.x + int(self.width/2)+30 - int(SizeCheck.size(str(self.text))[0]), self.y + int(self.height/2) - 20))
+
 def rankup(rank):
     #Defines the new colors for each rank
     Colors = [(255,0,0),(255,128,0),(255,255,0),(128,255,0),(0,255,128),(0,255,255),
-              (0,128,255),(0,0,255),(127,0,255),(255,0,255),(255,0,127)]
+              (0,128,255),(0,0,255),(127,0,255),(255,0,255),(255,0,127), (0,0,0)]
     return Colors[rank-1]
 
 #A function that takes a number and returns a shorter number with a letter on its end
@@ -121,7 +130,11 @@ def game_loop():
     Fillup = 0
     gold = 0
     GoldCooldown = time.process_time()+1
-    Buttons = [Button(50,650,200,100),Button(450,650,200,100)]
+    Buttons = [Button(50,650,200,100, "Shop"),Button(450,650,200,100, "")]
+    upgrades = []
+    for i in range(12):
+        upgrades.append([False, 50 * (2**(i+1))])
+    
 
     while game_run == True:
 
@@ -151,6 +164,9 @@ def game_loop():
                                 board[j][i].OldPos = [board[j][i].x, board[j][i].y]
                                 board[j][i].drag = True
                                 selected = [i, j]
+                #Opening Shop
+                if pos[0] >= 50 and pos[0] <= 250 and pos[1] >= 650 and pos[1] <= 750:
+                    upgrades, board, gold = Shop.shop(upgrades, board, gold)
                 #Spawning a new box
                 if pos[0] >= 310 and pos[0] <= 410 and pos[1] >= 650 and pos[1] <= 750 and Fillup == 100:
                     count = 0
@@ -177,7 +193,9 @@ def game_loop():
                                 if pos[0] >= board[j][i].x and pos[0] <= board[j][i].x + board[j][i].width and pos[1] >= board[j][i].y and pos[1] <= board[j][i].y + board[j][i].height and board[j][i].drag == False and board[j][i].rank == board[selected[1]][selected[0]].rank:
                                     board[selected[1]][selected[0]] = Tile([selected[1],selected[0]], 0)
                                     board[j][i].rank += 1
-                                    board[j][i].color = rankup(board[j][i].rank)
+                                    if board[j][i].rank >= 3:
+                                        upgrades[board[j][i].rank-3][0] = True
+                                    board[j][i].color = rankup(board[j][i].rank % 12)
                                     
                                 #Used to swap tiles(Currently Broken)
                                 '''if pos[0] >= board[j][i].x and pos[0] <= board[j][i].x + board[j][i].width and pos[1] >= board[j][i].y and pos[1] <= board[j][i].y + board[j][i].height and board[j][i].drag == True and board[j][i].rank != board[selected[1]][selected[0]].rank:
@@ -234,5 +252,5 @@ def game_loop():
         clock.tick(60)
 
 
-
-game_loop()
+if __name__ == "__main__":
+    game_loop()
