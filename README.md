@@ -1,2 +1,1 @@
-Merge Blocks is currently in Alpha and has tons of bugs I'm trying to fix.
-Next Up: Working on the shop
+Merge Blocks is currently in Alpha and has tons of bugs I'm trying to fix. Just added was the shop and now the ability to go way further so when you get past the planned 12 different colors you start going into more with the ability to merge up to a little over 1000 different blocks. Next up planned is to work on a save file
