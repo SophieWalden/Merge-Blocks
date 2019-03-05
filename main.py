@@ -10,7 +10,7 @@ except ImportError:
     print("Make sure you have python 3 and pygame.")
     sys.exit()
 try:
-    import Shop
+    import Shop, MainMenu
 except ImportError:
     print("Make sure you have all the extra files")
 from pygame import freetype
@@ -42,7 +42,7 @@ class Tile():
         if Rank >= 1:
             self.color = rankup(Rank%12)
         else:
-            self.color = (0,150,150)
+            self.color = (0,200,200)
         self.drag = False
         self.OldPos = [self.x,self.y]
         self.rank = Rank
@@ -116,7 +116,7 @@ def shorten(Num):
     return Num
     
 
-def game_loop():
+def game_loop(Load):
     game_run = True
     board = [[0] * 3 for _ in range(3)]
     for j in range(3):
@@ -134,12 +134,29 @@ def game_loop():
     upgrades = []
     for i in range(12):
         upgrades.append([False, 50 * (2**(i+1))])
-    
+    SaveTime = time.process_time() + 10
+
+    SaveFile = open("Save File/SaveFile.txt","r")
+    Data = SaveFile.readline().split()
+    count = 0
+    if Load != "New":
+        if len(Data) == 34:
+            gold = int(Data[count])
+            count += 1
+            board = [[0] * 3 for _ in range(3)]
+            for j in range(3):
+                for i in range(3):
+                    board[j][i] = Tile([j,i],int(Data[count]))
+                    count += 1
+            for upgrade in upgrades:
+                upgrade[0] = bool(Data[count])
+                upgrade[1] = int(Data[count+1])
+                count += 2
 
     while game_run == True:
 
         #Drawing the background
-        gameDisplay.fill((0,150,150))
+        gameDisplay.fill((0,200,200))
         pos = pygame.mouse.get_pos()
         for j in range(len(board)):
             for i in range(len(board[0])):
@@ -152,6 +169,17 @@ def game_loop():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                DataList = []
+                DataList.append(str(gold))
+                for row in board:
+                    for tile in row:
+                        DataList.append(str(tile.rank))
+                for upgrade in upgrades:
+                    DataList.append(str(upgrade[0]))
+                    DataList.append(str(upgrade[1]))
+                
+                SaveFile = open("Save File/SaveFile.txt","w")
+                SaveFile.write(" ".join(DataList))
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -248,9 +276,24 @@ def game_loop():
         for button in Buttons:
             button.draw()
 
+        #Automatically Saving the game every 10 seconds
+        if SaveTime - time.process_time() <= 0:
+            SaveTime = time.process_time() + 10
+            DataList = []
+            DataList.append(str(gold))
+            for row in board:
+                for tile in row:
+                    DataList.append(str(tile.rank))
+            for upgrade in upgrades:
+                DataList.append(str(upgrade[0]))
+                DataList.append(str(upgrade[1]))
+            
+            SaveFile = open("Save File/SaveFile.txt","w")
+            SaveFile.write(" ".join(DataList))
+
         pygame.display.flip()
         clock.tick(60)
 
 
 if __name__ == "__main__":
-    game_loop()
+    MainMenu.HomeScreen()
