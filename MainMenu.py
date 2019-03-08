@@ -63,6 +63,12 @@ def HomeScreen():
     Buttons = [Button(100,525,200,100,"New Game"),Button(400,525,200,100,"Continue"),Button(100,650,200,100,"Credits"),Button(400,650,200,100,"Options")]
     ExtraButtons = [Button(400,650,200,100,"Exit")]
     screen = "Main"
+    rank = 1
+    x =  100
+    forward = True
+    backward = False
+    ColorChange = 0
+    waitTime = 0.1
 
     while game_run == True:
 
@@ -117,9 +123,37 @@ def HomeScreen():
                             screen = "Main"
 
 
+        #Drawing a cool little animation
+        if forward:
+            x += 5
+            if x >= 300:
+                forward = not forward
+                waitTime = time.process_time() + 1
+            pygame.draw.rect(gameDisplay,Colors[rank-1],(x,300,50,50),0)
+            pygame.draw.rect(gameDisplay,Colors[rank-1],(600-x,300,50,50),0)
+        if not forward and not backward:
+            pygame.draw.rect(gameDisplay,Colors[rank],(275,275,100,100),0)
+            if waitTime - time.process_time() <= 0:
+                backward = True
+        if backward:
+            x -= 5
+            pygame.draw.rect(gameDisplay,Colors[rank],(x,300,50,50),0)
+            pygame.draw.rect(gameDisplay,Colors[rank],(600-x,300,50,50),0)
+            if x <= 105:
+                backward = not backward
+                forward = True
+                ColorChange = 0
+                x = 100
+                rank += 1
+                rank %= 12
+                waitTime = time.process_time() + 1
+
+        
+                
+
         pygame.display.flip()
         clock.tick(60)
 
 
 if __name__ == "__main__":
-    game_loop()
+    HomeScreen()
