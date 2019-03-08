@@ -10,7 +10,7 @@ except ImportError:
     print("Make sure you have python 3 and pygame.")
     sys.exit()
 try:
-    import Shop, MainMenu
+    import Shop, MainMenu, Options
 except ImportError:
     print("Make sure you have all the extra files")
 from pygame import freetype
@@ -75,7 +75,11 @@ class Button():
         pygame.draw.rect(gameDisplay,(100,100,100),(self.x,self.y,self.width,self.height),5)
 
         text_surface, rect = font_50.render(str(self.text), (0, 0, 0))
-        gameDisplay.blit(text_surface, (self.x + int(self.width/2)+30 - int(SizeCheck.size(str(self.text))[0]), self.y + int(self.height/2) - 20))
+        if self.text != "Options":
+            gameDisplay.blit(text_surface, (self.x + int(self.width/2)+30 - int(SizeCheck.size(str(self.text))[0]), self.y + int(self.height/2) - 20))
+        else:
+            gameDisplay.blit(text_surface, (self.x + int(self.width/2)+43 - int(SizeCheck.size(str(self.text))[0]), self.y + int(self.height/2) - 20))
+            
 
 def rankup(rank):
     #Defines the new colors for each rank
@@ -130,11 +134,12 @@ def game_loop(Load):
     Fillup = 0
     gold = 0
     GoldCooldown = time.process_time()+1
-    Buttons = [Button(50,650,200,100, "Shop"),Button(450,650,200,100, "")]
+    Buttons = [Button(50,650,200,100, "Shop"),Button(450,650,200,100, "Options")]
     upgrades = []
     for i in range(12):
         upgrades.append([False, 50 * (2**(i+1))])
     SaveTime = time.process_time() + 10
+    Stats = {"Tiles": 0}
 
     SaveFile = open("Save File/SaveFile.txt","r")
     Data = SaveFile.readline().split()
@@ -195,6 +200,26 @@ def game_loop(Load):
                 #Opening Shop
                 if pos[0] >= 50 and pos[0] <= 250 and pos[1] >= 650 and pos[1] <= 750:
                     upgrades, board, gold = Shop.shop(upgrades, board, gold)
+                if pos[0] >= 450 and pos[0] <= 650 and pos[1] >= 650 and pos[1] <= 750:
+                    Loading = Options.menu(board, gold, upgrades, Stats)
+                    if Loading == "Load":
+                        SaveFile = open("Save File/SaveFile.txt","r")
+                        Data = SaveFile.readline().split()
+                        count = 0
+                        if Load != "New":
+                            if len(Data) == 34:
+                                gold = int(Data[count])
+                                count += 1
+                                board = [[0] * 3 for _ in range(3)]
+                                for j in range(3):
+                                    for i in range(3):
+                                        board[j][i] = Tile([j,i],int(Data[count]))
+                                        count += 1
+                                for upgrade in upgrades:
+                                    upgrade[0] = bool(Data[count])
+                                    upgrade[1] = int(Data[count+1])
+                                    count += 2                        
+                        
                 #Spawning a new box
                 if pos[0] >= 310 and pos[0] <= 410 and pos[1] >= 650 and pos[1] <= 750 and Fillup == 100:
                     count = 0
@@ -210,6 +235,7 @@ def game_loop(Load):
                                 board[int(num/3)][num%3] = Tile([int(num/3),num%3], 1)
                                 placed = True
                                 Fillup = 0
+                        Stats["Tiles"] += 1
                                 
                             
             if event.type == pygame.MOUSEBUTTONUP:
@@ -221,13 +247,13 @@ def game_loop(Load):
                                 if pos[0] >= board[j][i].x and pos[0] <= board[j][i].x + board[j][i].width and pos[1] >= board[j][i].y and pos[1] <= board[j][i].y + board[j][i].height and board[j][i].drag == False and board[j][i].rank == board[selected[1]][selected[0]].rank:
                                     board[selected[1]][selected[0]] = Tile([selected[1],selected[0]], 0)
                                     board[j][i].rank += 1
-                                    if board[j][i].rank >= 3:
+                                    if 14 >= board[j][i].rank >= 3:
                                         upgrades[board[j][i].rank-3][0] = True
                                     board[j][i].color = rankup(board[j][i].rank % 12)
                                     
-                                #Used to swap tiles(Currently Broken)
-                                '''if pos[0] >= board[j][i].x and pos[0] <= board[j][i].x + board[j][i].width and pos[1] >= board[j][i].y and pos[1] <= board[j][i].y + board[j][i].height and board[j][i].drag == True and board[j][i].rank != board[selected[1]][selected[0]].rank:
-                                    board[j][i], board[selected[0]][selected[0]] = board[selected[1]][selected[0]], board[j][i]
+                                '''#Used to swap tiles(Currently Broken)
+                                elif pos[0] >= board[j][i].x and pos[0] <= board[j][i].x + board[j][i].width and pos[1] >= board[j][i].y and pos[1] <= board[j][i].y + board[j][i].height and board[j][i].drag == True and board[j][i].rank != board[selected[1]][selected[0]].rank:
+                                    board[j][i], board[selected[1]][selected[0]] = board[selected[1]][selected[0]], board[j][i]
                                     board[j][i].x, board[j][i].y = board[j][i].OldPos[0],board[j][i].OldPos[1]
                                     board[selected[1]][selected[0]].x, board[selected[1]][selected[0]].y = board[selected[1]][selected[0]].OldPos[0],board[selected[1]][selected[0]].OldPos[1]
                                     board[selected[1]][selected[0]].drag = False'''
@@ -236,9 +262,7 @@ def game_loop(Load):
                                 if [board[j][i].x,board[j][i].y] != board[j][i].OldPos:
                                     board[j][i].x, board[j][i].y = board[j][i].OldPos[0], board[j][i].OldPos[1]
                                 
-                                board[j][i].drag = False
-                                            
-                                    
+                                board[j][i].drag = False                                    
             
                             
                 selected = []
