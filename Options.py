@@ -98,6 +98,16 @@ def menu(board, gold, upgrades, Stats):
                                 for upgrade in upgrades:
                                     DataList.append(str(upgrade[0]))
                                     DataList.append(str(upgrade[1]))
+
+                                seconds = 0
+                                currentDT = datetime.datetime.now()
+                                seconds += currentDT.year * 31536000
+                                seconds += currentDT.month * 2592000
+                                seconds += currentDT.day * 86400
+                                seconds += currentDT.hour * 3600
+                                seconds += currentDT.minute * 60
+                                seconds += currentDT.second
+                                DataList.append(str(seconds))
                                 
                                 SaveFile = open("Save File/SaveFile.txt","w")
                                 SaveFile.write(" ".join(DataList))
