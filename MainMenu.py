@@ -126,19 +126,19 @@ def HomeScreen():
         #Drawing a cool little animation
         if forward:
             x += 5
-            if x >= 300:
+            if x >= 320:
                 forward = not forward
                 waitTime = time.process_time() + 1
             pygame.draw.rect(gameDisplay,Colors[rank-1],(x,300,50,50),0)
-            pygame.draw.rect(gameDisplay,Colors[rank-1],(600-x,300,50,50),0)
+            pygame.draw.rect(gameDisplay,Colors[rank-1],(650-x,300,50,50),0)
         if not forward and not backward:
-            pygame.draw.rect(gameDisplay,Colors[rank],(275,275,100,100),0)
+            pygame.draw.rect(gameDisplay,Colors[rank],(300,275,100,100),0)
             if waitTime - time.process_time() <= 0:
                 backward = True
         if backward:
             x -= 5
             pygame.draw.rect(gameDisplay,Colors[rank],(x,300,50,50),0)
-            pygame.draw.rect(gameDisplay,Colors[rank],(600-x,300,50,50),0)
+            pygame.draw.rect(gameDisplay,Colors[rank],(650-x,300,50,50),0)
             if x <= 105:
                 backward = not backward
                 forward = True
