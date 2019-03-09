@@ -1,6 +1,6 @@
 #Importing all the modules
 try:
-    import time, random, sys, os
+    import time, random, sys, os, datetime
 except ImportError:
     print("Make sure to have the time module")
     sys.exit()
@@ -25,6 +25,8 @@ from pygame import freetype
 # Initialize the game engine
 pygame.init()
 font_50 = pygame.freetype.Font("Font.ttf", 50)
+font_40 = pygame.freetype.Font("Font.ttf", 40)
+font_35 = pygame.freetype.Font("Font.ttf", 35)
 SizeCheck = pygame.font.Font(None, 50)
 DisplayWidth,DisplayHeight = 700, 800
 clock = pygame.time.Clock()
@@ -56,7 +58,7 @@ class Tile():
     
     def update(self):
         self.draw()
-
+                            
 #The Buttons
 class Button():
     def __init__(self, x, y, width, height, Text):
@@ -133,6 +135,7 @@ def game_loop(Load):
     selected = []
     Fillup = 0
     gold = 0
+    Popup = False
     GoldCooldown = time.process_time()+1
     Buttons = [Button(50,650,200,100, "Shop"),Button(450,650,200,100, "Options")]
     upgrades = []
@@ -145,18 +148,46 @@ def game_loop(Load):
     Data = SaveFile.readline().split()
     count = 0
     if Load != "New":
-        if len(Data) == 34:
+        if len(Data) >= 1:
             gold = int(Data[count])
             count += 1
+        if len(Data) >= 10:
             board = [[0] * 3 for _ in range(3)]
             for j in range(3):
                 for i in range(3):
                     board[j][i] = Tile([j,i],int(Data[count]))
                     count += 1
+        if len(Data) >= 22:
             for upgrade in upgrades:
-                upgrade[0] = bool(Data[count])
+                if Data[count] == "True":
+                    upgrade[0] = True
+                else:
+                    upgrade[0] = False
                 upgrade[1] = int(Data[count+1])
                 count += 2
+
+        if len(Data) >= 23:
+            #Giving you gold for the missed time
+            PastSeconds = int(Data[count])
+            seconds = 0
+            currentDT = datetime.datetime.now()
+            seconds += currentDT.year * 31536000
+            seconds += currentDT.month * 2592000
+            seconds += currentDT.day * 86400
+            seconds += currentDT.hour * 3600
+            seconds += currentDT.minute * 60
+            seconds += currentDT.second
+            Change = seconds - PastSeconds
+            gain = 0
+            for row in board:
+                for tile in row:
+                    gain += (2**tile.rank - 1) * Change
+            gold += gain
+            count += 1
+
+            Popup = True
+
+    PopupButton = [Button(485,265,50,50,"")]
 
     while game_run == True:
 
@@ -182,6 +213,16 @@ def game_loop(Load):
                 for upgrade in upgrades:
                     DataList.append(str(upgrade[0]))
                     DataList.append(str(upgrade[1]))
+
+                seconds = 0
+                currentDT = datetime.datetime.now()
+                seconds += currentDT.year * 31536000
+                seconds += currentDT.month * 2592000
+                seconds += currentDT.day * 86400
+                seconds += currentDT.hour * 3600
+                seconds += currentDT.minute * 60
+                seconds += currentDT.second
+                DataList.append(str(seconds))
                 
                 SaveFile = open("Save File/SaveFile.txt","w")
                 SaveFile.write(" ".join(DataList))
@@ -218,7 +259,12 @@ def game_loop(Load):
                                 for upgrade in upgrades:
                                     upgrade[0] = bool(Data[count])
                                     upgrade[1] = int(Data[count+1])
-                                    count += 2                        
+                                    count += 2
+                #Exiting the popup box
+                for button in PopupButton:
+                    if button.x <= pos[0] <= button.x + button.width and button.y <= pos[1] <= button.y + button.height:
+                        Popup = False
+
                         
                 #Spawning a new box
                 if pos[0] >= 310 and pos[0] <= 410 and pos[1] >= 650 and pos[1] <= 750 and Fillup == 100:
@@ -258,9 +304,11 @@ def game_loop(Load):
                                     board[selected[1]][selected[0]].x, board[selected[1]][selected[0]].y = board[selected[1]][selected[0]].OldPos[0],board[selected[1]][selected[0]].OldPos[1]
                                     board[selected[1]][selected[0]].drag = False'''
                                 
-
-                                if [board[j][i].x,board[j][i].y] != board[j][i].OldPos:
-                                    board[j][i].x, board[j][i].y = board[j][i].OldPos[0], board[j][i].OldPos[1]
+                                if 50 <= board[j][i].x <= 125 and 310 <= board[j][i].y <= 425:
+                                    board[j][i] = Tile([i,j],0)
+                                else:
+                                    if [board[j][i].x,board[j][i].y] != board[j][i].OldPos:
+                                        board[j][i].x, board[j][i].y = board[j][i].OldPos[0], board[j][i].OldPos[1]
                                 
                                 board[j][i].drag = False                                    
             
@@ -275,6 +323,13 @@ def game_loop(Load):
                     if board[j][i].drag == True:
                         board[j][i].x = pos[0] + MousePos[0]
                         board[j][i].y = pos[1] + MousePos[1]
+                        if 50 <= pos[0] <= 125 and 310 <= pos[1] <= 425:
+                            pygame.draw.rect(gameDisplay,(150,150,150),(65,325,75,100),0)
+                            pygame.draw.rect(gameDisplay,(100,100,100),(52,290,100,15),0)
+                        else:
+                            pygame.draw.rect(gameDisplay,(150,150,150),(65,325,75,100),0)
+                            pygame.draw.rect(gameDisplay,(100,100,100),(52,310,100,15),0)
+                            
                         
         #Drawing the selected tile over the other ones
         for j in range(len(board)):
@@ -300,6 +355,34 @@ def game_loop(Load):
         for button in Buttons:
             button.draw()
 
+        #Drawing the popup thing to show gold made when your offline
+        if Popup:
+            pygame.draw.rect(gameDisplay,(0,150,150),(150,250,400,300),0)
+            pygame.draw.rect(gameDisplay,(0,100,100),(150,250,400,300),5)
+            for button in PopupButton:
+                button.draw()
+            Time = Change
+            TimeList = [0,0,0]
+            while Time >= 3600:
+                Time -= 3600
+                TimeList[0] += 1
+            while Time >= 60:
+                Time -= 60
+                TimeList[1] += 1
+            TimeList[2] = int(Time)
+            for i, var in enumerate(TimeList):
+                TimeList[i] = str(TimeList[i])
+                if len(TimeList[i]) != 2:
+                    TimeList[i] = "0" + TimeList[i]
+            text_surface, rect = font_40.render("Time gone: " + str(TimeList[0]) + ":" + str(TimeList[1]) + ":" + str(TimeList[2]), (0, 0, 0))
+            gameDisplay.blit(text_surface, (160, 350))
+            text_surface, rect = font_35.render("Gold earned: " + shorten(gain), (0, 0, 0))
+            gameDisplay.blit(text_surface, (270 - int(SizeCheck.size(shorten(gain))[0]), 400))
+            pygame.draw.line(gameDisplay,(150,150,150),(489,272),(529,307),3)
+            pygame.draw.line(gameDisplay,(150,150,150),(489,307),(529,272),3)
+            
+
+
         #Automatically Saving the game every 10 seconds
         if SaveTime - time.process_time() <= 0:
             SaveTime = time.process_time() + 10
@@ -311,13 +394,22 @@ def game_loop(Load):
             for upgrade in upgrades:
                 DataList.append(str(upgrade[0]))
                 DataList.append(str(upgrade[1]))
-            
+
+            seconds = 0
+            currentDT = datetime.datetime.now()
+            seconds += currentDT.year * 31536000
+            seconds += currentDT.month * 2592000
+            seconds += currentDT.day * 86400
+            seconds += currentDT.hour * 3600
+            seconds += currentDT.minute * 60
+            seconds += currentDT.second
+            DataList.append(str(seconds))
+
             SaveFile = open("Save File/SaveFile.txt","w")
             SaveFile.write(" ".join(DataList))
 
         pygame.display.flip()
         clock.tick(60)
-
 
 if __name__ == "__main__":
     MainMenu.HomeScreen()
